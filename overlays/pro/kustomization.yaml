@@ -3,7 +3,8 @@ kind: Kustomization
 namespace: connectme-pro
 resources:
   - namespace.yaml
-#  - ../../base
+  # Required: scheduling patches target resources declared by this base.
+  - ../../base
   - ingress.yaml
 patches:
   - path: scheduling.yaml
