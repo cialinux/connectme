@@ -10,5 +10,8 @@ coverage.out
 **/secrets.env
 **/secret.local.yaml
 site
+base
+overlays
+fleet*.yaml
 .github
 docs

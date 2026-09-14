@@ -15,8 +15,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 45
-      imagePullSecrets:
-        - name: cred-dockerhub
+      # All runtime images are public; no namespace-local registry secret needed.
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch

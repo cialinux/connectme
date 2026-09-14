@@ -1,6 +1,10 @@
 # Kubernetes — staging e estrutura dev/pro
 
-Estrutura inspirada em `../cialinux`: `site/overlays/dev` e `site/overlays/pro`, Ingress
+Para o deploy Fleet atual e correção do namespace connectme-pro, siga primeiro
+[recuperação Fleet](FLEET.md), incluindo o arquivo de Secret local validado.
+Os exemplos genéricos de importação abaixo não substituem essa preparação.
+
+Estrutura inspirada em `../cialinux`: `overlays/dev` e `overlays/pro`, Ingress
 NGINX, cert-manager, imagem Docker Hub e seleção de nós `workload=dev/pro`.
 Uma base comum evita divergência entre os domínios. Nenhum recurso foi aplicado.
 
@@ -42,7 +46,7 @@ valores em outro cluster. Os CIDRs internos permanecem bloqueados no aplicativo.
    Os manifests não tornam sua LAN acessível a partir da Hetzner.
 5. Preservar banco e chaves do Compose. `.env` não é versionado nem embutido
    nos manifests. Não criar novas chaves para um banco já cifrado.
-6. `site/base/ssh_known_hosts` contém a chave pública fixada para o SSH de teste.
+6. `base/ssh_known_hosts` contém a chave pública fixada para o SSH de teste.
    Ao cadastrar ou rotacionar chaves verificadas, mantenha esse arquivo alinhado
    com `config/ssh_known_hosts`. A mudança altera o hash do ConfigMap e provoca
    recriação do Pod na próxima aplicação do overlay, encerrando sessões abertas.
@@ -54,9 +58,9 @@ de HTTPS confiável para clipboard. O cert-manager ainda depende de DNS e challe
 ## Renderizar e validar — sem mutação
 
 ```sh
-kubectl kustomize site/overlays/dev
-kubectl kustomize site/overlays/pro
-kubectl kustomize site/overlays/dev | kubectl --kubeconfig "$HOME/.kube/config-staging" create --dry-run=client --validate=strict -f - -o name
+kubectl kustomize overlays/dev
+kubectl kustomize overlays/pro
+kubectl kustomize overlays/dev | kubectl --kubeconfig "$HOME/.kube/config-staging" create --dry-run=client --validate=strict -f - -o name
 ```
 
 Use `$HOME/.kube/config-staging`, não `\~/.kube/config-staging` (o til escapado
@@ -92,7 +96,7 @@ veja [CI da imagem](IMAGE_CI.md).
    CONNECTME_MASTER_KEY, CONNECTME_AUDIT_HMAC_KEY e CONNECTME_GUACAMOLE_KEY.
 
 ```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f site/overlays/dev/namespace.yaml
+kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f overlays/dev/namespace.yaml
 kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev create secret generic connectme-runtime --from-env-file=.env --dry-run=client -o yaml | kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f -
 ```
 
@@ -108,7 +112,7 @@ seu resultado. Configure o imagePullSecret separadamente se necessário.
    restauração com indisponibilidade e backup antes de continuar.
 
 ```sh
-kubectl kustomize site/overlays/dev | kubectl --kubeconfig "$HOME/.kube/config-staging" create --dry-run=client -f - -o json | jq -s '{apiVersion:"v1",kind:"List",items:[.[] | select(.kind != "Deployment" and .kind != "Ingress")]}' | kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f -
+kubectl kustomize overlays/dev | kubectl --kubeconfig "$HOME/.kube/config-staging" create --dry-run=client -f - -o json | jq -s '{apiVersion:"v1",kind:"List",items:[.[] | select(.kind != "Deployment" and .kind != "Ingress")]}' | kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f -
 kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev rollout status statefulset/postgres --timeout=180s
 ```
 
@@ -126,7 +130,7 @@ kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev exec -i postg
    allowlist revisados, inicie a aplicação:
 
 ```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" apply -k site/overlays/dev
+kubectl --kubeconfig "$HOME/.kube/config-staging" apply -k overlays/dev
 kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev rollout status deployment/connectme --timeout=240s
 kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev get pods,pvc,svc,ingress,certificate
 ```

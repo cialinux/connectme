@@ -7,3 +7,4 @@ spec:
       nodeSelector: {workload: pro}
       tolerations:
         - {key: dr, operator: Exists, effect: NoSchedule}
+        - {key: dedicated, operator: Equal, value: pro, effect: NoSchedule}

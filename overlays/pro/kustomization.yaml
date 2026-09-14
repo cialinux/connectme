@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: connectme-pro
 resources:
   - namespace.yaml
-#  - ../../base
+  - ../../base
   - ingress.yaml
 patches:
   - path: scheduling.yaml

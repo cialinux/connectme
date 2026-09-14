@@ -1,6 +1,7 @@
 # ConnectMe
 
-Código e build da imagem na raiz; Kubernetes em [`site/`](site/README.md).
+Código, build e manifests na raiz: `base/` e `overlays/{dev,pro}`.
+[Diagnóstico e configuração Fleet](docs/FLEET.md).
 [Build incremental e publicação latest pelo GitHub Actions](docs/IMAGE_CI.md).
 
 Deploy Kubernetes com overlays dev/pro e migração do Compose:

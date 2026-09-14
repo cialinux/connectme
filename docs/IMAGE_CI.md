@@ -19,11 +19,11 @@ Publicações são serializadas; uma execução de commit antigo é recusada qua
 a main já avançou. O workflow só é ativo depois que o operador enviar o arquivo
 ao GitHub; não foi disparado ou publicado durante a preparação local.
 
-Dev usa o alias dev. Para produção, altere `site/overlays/pro/kustomization.yaml`
+Dev usa o alias dev. Para produção, altere `overlays/pro/kustomization.yaml`
 para uma versão testada (ou digest). O valor inicial latest existe no registry
 após o primeiro build, mas é mutável; fixe a versão antes do rollout de produção.
 Não há deploy automático. Se o namespace Docker
 Hub for diferente, ajuste `images.newName` nos dois overlays.
 
-Código e build ficam na raiz; manifests em `site/` não entram no contexto Docker.
+Código, build e manifests ficam na raiz; `base/` e `overlays/` não entram no contexto Docker.
 Veja [Kubernetes](KUBERNETES.md) para a implantação manual.
