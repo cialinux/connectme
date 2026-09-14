@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: connectme
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production-cialinux
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "34m"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    # Client public egress IP. 128.140.29.148 is the ingress destination.
+    nginx.ingress.kubernetes.io/whitelist-source-range: "94.62.108.14/32"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [connectme.dev.cialinux.com]
+      secretName: connectme-dev-tls
+  rules:
+    - host: connectme.dev.cialinux.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: connectme
+                port: {number: 80}

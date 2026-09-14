@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata: {name: connectme}
+spec:
+  selector: {app: connectme}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+# Internal only. The application currently resolves this stable gateway name.
+apiVersion: v1
+kind: Service
+metadata: {name: guacamole}
+spec:
+  selector: {app: connectme}
+  ports: [{name: gateway, port: 8080, targetPort: gateway}]
+  # Permit same-Pod gateway access while readiness is still converging.
+  publishNotReadyAddresses: true
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres}
+spec:
+  clusterIP: None
+  selector: {app: connectme-postgres}
+  ports: [{name: postgres, port: 5432, targetPort: postgres}]

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  selector:
+    matchLabels: {app: connectme-postgres}
+  template:
+    metadata:
+      labels: {app: connectme-postgres}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: postgres
+          image: postgres:17.6-alpine3.22
+          ports: [{name: postgres, containerPort: 5432}]
+          env:
+            - {name: POSTGRES_DB, value: connectme}
+            - {name: POSTGRES_USER, value: connectme}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: connectme-runtime, key: POSTGRES_PASSWORD}
+          startupProbe:
+            exec: {command: [pg_isready, -U, connectme, -d, connectme]}
+            periodSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            exec: {command: [pg_isready, -U, connectme, -d, connectme]}
+            periodSeconds: 5
+          livenessProbe:
+            exec: {command: [pg_isready, -U, connectme, -d, connectme]}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: runtime, mountPath: /var/run/postgresql}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: runtime, emptyDir: {}}
+        - {name: tmp, emptyDir: {}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: hcloud-volumes-encrypted
+        resources:
+          requests: {storage: 5Gi}

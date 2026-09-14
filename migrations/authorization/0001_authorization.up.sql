@@ -1,0 +1,11 @@
+CREATE SCHEMA IF NOT EXISTS authz;
+CREATE TABLE authz.roles(id uuid PRIMARY KEY,name text NOT NULL UNIQUE,description text NOT NULL DEFAULT '',system boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE authz.permissions(name text PRIMARY KEY,description text NOT NULL DEFAULT '');
+CREATE TABLE authz.role_permissions(role_id uuid NOT NULL REFERENCES authz.roles(id) ON DELETE CASCADE,permission text NOT NULL REFERENCES authz.permissions(name) ON DELETE CASCADE,PRIMARY KEY(role_id,permission));
+CREATE TABLE authz.user_roles(user_id uuid NOT NULL,role_id uuid NOT NULL REFERENCES authz.roles(id) ON DELETE CASCADE,PRIMARY KEY(user_id,role_id));
+CREATE TABLE authz.groups(id uuid PRIMARY KEY,name text NOT NULL UNIQUE,description text NOT NULL DEFAULT '',created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE authz.group_members(group_id uuid NOT NULL REFERENCES authz.groups(id) ON DELETE CASCADE,user_id uuid NOT NULL,PRIMARY KEY(group_id,user_id));
+CREATE TABLE authz.group_roles(group_id uuid NOT NULL REFERENCES authz.groups(id) ON DELETE CASCADE,role_id uuid NOT NULL REFERENCES authz.roles(id) ON DELETE CASCADE,PRIMARY KEY(group_id,role_id));
+INSERT INTO authz.permissions(name,description) VALUES ('system.admin','Administração completa'),('users.read','Consultar utilizadores'),('users.manage','Gerir utilizadores'),('roles.manage','Gerir RBAC'),('audit.read','Consultar auditoria') ON CONFLICT DO NOTHING;
+INSERT INTO authz.roles(id,name,description,system) VALUES ('00000000-0000-4000-8000-000000000001','administrator','Administrador global',true) ON CONFLICT DO NOTHING;
+INSERT INTO authz.role_permissions(role_id,permission) SELECT '00000000-0000-4000-8000-000000000001',name FROM authz.permissions ON CONFLICT DO NOTHING;

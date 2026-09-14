@@ -1,0 +1,14 @@
+.git
+.env
+dist
+coverage.out
+*.log
+.local
+*.dump
+*.backup
+.env.*
+**/secrets.env
+**/secret.local.yaml
+site
+.github
+docs

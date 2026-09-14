@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: connectme}
+spec:
+  template:
+    spec:
+      nodeSelector: {workload: dev}
+      tolerations:
+        - {key: dr, operator: Exists, effect: NoSchedule}

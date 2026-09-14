@@ -1,0 +1,3 @@
+CREATE SCHEMA IF NOT EXISTS credentials;
+CREATE TABLE credentials.secret_refs(id uuid PRIMARY KEY,name text NOT NULL,type text NOT NULL CHECK(type IN ('password','ssh-key','windows')),encrypted_data_key bytea NOT NULL,ciphertext bytea NOT NULL,key_version integer NOT NULL DEFAULT 1,owner_id uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),rotated_at timestamptz,deleted_at timestamptz);
+CREATE TABLE credentials.bindings(id uuid PRIMARY KEY,secret_ref_id uuid NOT NULL REFERENCES credentials.secret_refs(id),host_id uuid,location_id uuid,shared boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now(),CHECK(host_id IS NOT NULL OR location_id IS NOT NULL));

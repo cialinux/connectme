@@ -1,0 +1,8 @@
+CREATE SCHEMA IF NOT EXISTS identity;
+CREATE TABLE identity.users(id uuid PRIMARY KEY, email text NOT NULL, display_name text NOT NULL, enabled boolean NOT NULL DEFAULT true, failed_attempts integer NOT NULL DEFAULT 0, locked_until timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), deleted_at timestamptz);
+CREATE UNIQUE INDEX users_email_active_uidx ON identity.users(lower(email)) WHERE deleted_at IS NULL;
+CREATE TABLE identity.password_credentials(user_id uuid PRIMARY KEY REFERENCES identity.users(id) ON DELETE CASCADE, password_hash text NOT NULL, changed_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE identity.sessions(id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE, token_hash bytea NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), last_seen_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, revoked_at timestamptz, ip inet, user_agent text, CHECK(expires_at>created_at));
+CREATE INDEX sessions_active_idx ON identity.sessions(token_hash,expires_at) WHERE revoked_at IS NULL;
+CREATE TABLE identity.totp_factors(user_id uuid PRIMARY KEY REFERENCES identity.users(id) ON DELETE CASCADE, encrypted_secret bytea NOT NULL, pending boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), confirmed_at timestamptz);
+CREATE TABLE identity.recovery_codes(user_id uuid NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE, code_hash bytea NOT NULL, used_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(user_id,code_hash));

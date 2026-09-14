@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: connectme-session-boundary}
+spec:
+  podSelector:
+    matchLabels: {app: connectme}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ingress-nginx}
+      ports: [{protocol: TCP, port: 8081}]
+    - from:
+        - podSelector:
+            matchLabels: {app: connectme}
+      ports: [{protocol: TCP, port: 8080}]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - podSelector:
+            matchLabels: {app: connectme-postgres}
+      ports: [{protocol: TCP, port: 5432}]
+    - to:
+        - podSelector:
+            matchLabels: {app: connectme}
+      ports: [{protocol: TCP, port: 8080}]
+    - to:
+        - ipBlock: {cidr: 192.168.1.0/24}
+      ports: [{protocol: TCP, port: 22}, {protocol: TCP, port: 3389}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: connectme-database-boundary}
+spec:
+  podSelector:
+    matchLabels: {app: connectme-postgres}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app: connectme}
+      ports: [{protocol: TCP, port: 5432}]
+  egress: []

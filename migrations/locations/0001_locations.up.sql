@@ -1,0 +1,3 @@
+CREATE SCHEMA IF NOT EXISTS locations;
+CREATE TABLE locations.locations(id uuid PRIMARY KEY,name text NOT NULL UNIQUE,region text NOT NULL DEFAULT '',description text NOT NULL DEFAULT '',enabled boolean NOT NULL DEFAULT true,created_by uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE locations.networks(id uuid PRIMARY KEY,location_id uuid NOT NULL REFERENCES locations.locations(id) ON DELETE CASCADE,name text NOT NULL,cidr cidr NOT NULL,enabled boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(location_id,cidr));

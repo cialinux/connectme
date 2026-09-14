@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS core.web_sessions (id uuid PRIMARY KEY, user_id uuid NOT NULL, secret_hash bytea NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), last_seen_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, revoked_at timestamptz, CHECK (expires_at > created_at));
+CREATE INDEX IF NOT EXISTS web_sessions_active_idx ON core.web_sessions (user_id, expires_at) WHERE revoked_at IS NULL;
+CREATE TABLE IF NOT EXISTS core.module_state (name text PRIMARY KEY, version text NOT NULL, enabled boolean NOT NULL, last_error text, updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS core.key_versions (purpose text NOT NULL, version integer NOT NULL CHECK (version > 0), status text NOT NULL CHECK (status IN ('active','decrypt-only','retired')), created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (purpose, version));

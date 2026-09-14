@@ -1,0 +1,11 @@
+.env
+*.log
+coverage.out
+dist/
+.idea/
+.vscode/
+.local/
+*.dump
+*.backup
+**/secrets.env
+**/secret.local.yaml

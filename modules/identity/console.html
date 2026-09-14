@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ConnectMe · Administração</title>
+<style>
+:root{color-scheme:dark;--bg:#101725;--panel:#1a2537;--line:#34445c;--text:#e6edf7;--muted:#b1bfd3;--blue:#438cff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui}header{padding:20px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}h1{font-size:24px;margin:0}main{max-width:1150px;margin:auto;padding:26px}nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}button,input,select,textarea{font:inherit;border-radius:6px;padding:10px}button{cursor:pointer;background:var(--blue);border:1px solid transparent;color:white}button:disabled{opacity:.5;cursor:wait}nav button{background:var(--panel);border-color:var(--line)}nav button[aria-current=true]{border-color:var(--blue)}section{background:var(--panel);padding:22px;border-radius:12px;margin:18px 0}form{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}label{display:grid;gap:7px;color:var(--muted)}input,select,textarea{background:var(--bg);border:1px solid var(--line);color:var(--text);width:100%}form button{align-self:end}small,p{color:var(--muted)}#notice{white-space:pre-wrap}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:12px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{color:var(--muted)}.scroll{overflow:auto}.actions{display:flex;gap:12px;align-items:center}.hidden{display:none!important}a{color:#8cbaff}:focus-visible{outline:3px solid #90baff;outline-offset:3px}
+</style></head><body>
+<header><h1>ConnectMe</h1><div class="actions"><span>{{.DisplayName}}</span><button id="logout">Sair</button></div></header>
+<main><p id="notice" role="status" aria-live="polite"></p>
+{{if .MustChangePassword}}<h2>Defina sua senha</h2><p>Troque a senha inicial para liberar a administração.</p>{{else}}
+<nav id="navigation" aria-label="Administração"></nav>
+<section id="session-dock" aria-label="Sessões remotas"><h2>Sessões remotas</h2><p>Minimizar mantém a conexão. Encerrar fecha o acesso, sem fazer logoff no Windows.</p><div id="session-tabs" class="actions"></div></section>
+<div id="desktop-workspace"></div>
+<section id="resources"><h2 id="heading">Localizações</h2><p id="help"></p><form id="editor"></form><button id="cancel" type="button" hidden>Cancelar edição</button></section>
+<section><div class="actions"><h2>Cadastros</h2><button id="refresh">Atualizar</button></div><div class="scroll"><table><thead id="columns"></thead><tbody id="rows"></tbody></table></div><p id="paging"></p><button id="previous">Anterior</button> <button id="next">Próxima</button></section>
+<p>Use Abrir para testar o acesso pela LAN. O servidor precisa alcançar o host.</p>
+{{end}}
+<section><h2>Alterar senha</h2><form id="password"><label>Senha atual<input name="current_password" type="password" autocomplete="current-password" required></label><label>Nova senha<input name="new_password" type="password" minlength="12" autocomplete="new-password" required></label><button>Salvar e entrar novamente</button></form></section>
+{{if not .MustChangePassword}}<script src="/remote-assets/guacamole.js" defer></script>{{end}}
+<script src="/app/assets/console.js" defer></script></main></body></html>
