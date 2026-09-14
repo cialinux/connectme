@@ -29,7 +29,10 @@ spec:
       ports: [{protocol: TCP, port: 8080}]
     - to:
         - ipBlock: {cidr: 192.168.1.0/24}
-      ports: [{protocol: TCP, port: 22}, {protocol: TCP, port: 3389}]
+      ports: [{protocol: TCP, port: 22}, {protocol: TCP, port: 3389}, {protocol: TCP, port: 33891}]
+    - to:
+        - ipBlock: {cidr: 94.62.108.14/32}
+      ports: [{protocol: TCP, port: 33891}, {protocol: TCP, port: 3389}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
