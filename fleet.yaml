@@ -1,6 +1,0 @@
-# Shared Fleet options. GitRepo paths select base and the environment overlay.
-# Configure the destination namespace on the GitRepo, including for base.
-# Do not force the same Helm release name onto two separate bundles.
-helm:
-  timeoutSeconds: 300
-keepResources: true

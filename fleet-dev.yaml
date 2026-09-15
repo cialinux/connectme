@@ -1,5 +1,0 @@
-# Optional options file; use GitRepo paths base + overlays/dev.
-defaultNamespace: connectme-dev
-helm:
-  timeoutSeconds: 300
-keepResources: true
