@@ -225,7 +225,7 @@ func (m *Module) launch(w http.ResponseWriter, r *http.Request) {
 	defer clear(secret.Value)
 	parameters := map[string]string{"hostname": h.PinnedIP, "port": strconv.Itoa(c.Port), "username": meta.Username, "domain": meta.Domain, "password": string(secret.Value), "security": "nla", "client-name": "ConnectMe", "disable-copy": strconv.FormatBool(!c.ClipboardEnabled || !c.ClipboardCopyEnabled), "disable-paste": strconv.FormatBool(!c.ClipboardEnabled || !c.ClipboardPasteEnabled)}
 	if c.Protocol == "rdp" {
-		parameters["ignore-cert"] = strconv.FormatBool(allowUntrustedCertificate(h.PinnedIP))
+		parameters["ignore-cert"] = strconv.FormatBool(allowUntrustedCertificate())
 	} else {
 		hostKey, keyErr := sshHostKey(h.PinnedIP, c.Port)
 		if keyErr != nil {

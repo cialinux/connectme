@@ -55,17 +55,14 @@ func TestOriginPolicy(t *testing.T) {
 		}
 	}
 }
-func TestCertificateExceptionIsScoped(t *testing.T) {
-	t.Setenv("CONNECTME_RDP_IGNORE_CERT", "true")
-	t.Setenv("CONNECTME_RDP_INSECURE_CIDRS", "192.168.1.200/32")
-	if !allowUntrustedCertificate("192.168.1.200") {
-		t.Fatal("approved target rejected")
-	}
-	if allowUntrustedCertificate("192.168.1.201") {
-		t.Fatal("exception escaped scope")
-	}
-	t.Setenv("CONNECTME_RDP_INSECURE_CIDRS", "")
-	if allowUntrustedCertificate("192.168.1.200") {
-		t.Fatal("empty allowlist accepted")
+func TestCertificateExceptionIsGlobalOptIn(t *testing.T) {
+	for _, legacy := range []string{"", "192.168.1.200/32", "invalid"} {
+		t.Setenv("CONNECTME_RDP_INSECURE_CIDRS", legacy)
+		for _, setting := range []string{"true", "false", "", "invalid"} {
+			t.Setenv("CONNECTME_RDP_IGNORE_CERT", setting)
+			if got := allowUntrustedCertificate(); got != (setting == "true") {
+				t.Fatalf("global certificate option %q returned %v", setting, got)
+			}
+		}
 	}
 }

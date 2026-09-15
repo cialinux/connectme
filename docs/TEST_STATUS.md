@@ -174,12 +174,12 @@ atualizar. As novas migrations são aditivas e aplicadas no início.
   impedir mesmo quando o navegador abre o painel.
 - Proxy HTTPS deve permitir WebSocket/Upgrade. O túnel HTTP legado é negado;
   esta integração requer WebSocket.
-- Certificados RDP são verificados por padrão. Para teste controlado com
-  autoassinado, `CONNECTME_RDP_IGNORE_CERT=true` junto de
-  `CONNECTME_RDP_INSECURE_CIDRS=192.168.1.200/32` no `.env` desativa verificação
-  somente para esse destino (a lista vazia não permite exceções):
-  há risco de personificação do destino. Não recomendado para produção;
-  prefira certificado confiável.
+- `CONNECTME_RDP_IGNORE_CERT=true` ignora a verificação do certificado RDP
+  globalmente, sem lista de IPs, inclusive para hosts cadastrados por DNS.
+  Kubernetes e Compose habilitam essa opção por decisão do operador.
+  `CONNECTME_RDP_INSECURE_CIDRS` foi aposentada e não tem efeito.
+  TLS continua cifrado, mas há risco de personificação do destino; use
+  `CONNECTME_RDP_IGNORE_CERT=false` e certificados confiáveis para verificar identidade.
 
 - A UI antiga `/guacamole/` redireciona ao painel. Reconexão cria uma nova
   autorização no servidor; não há dependência de refresh de token no navegador.

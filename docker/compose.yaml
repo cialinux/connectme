@@ -32,8 +32,7 @@ services:
       CONNECTME_REMOTE_DENY_CIDRS: ""
       CONNECTME_SELF_SSH_TARGET: ${CONNECTME_SELF_SSH_TARGET:-}
       CONNECTME_SSH_KNOWN_HOSTS: /etc/connectme/ssh_known_hosts
-      CONNECTME_RDP_IGNORE_CERT: ${CONNECTME_RDP_IGNORE_CERT:-false}
-      CONNECTME_RDP_INSECURE_CIDRS: ${CONNECTME_RDP_INSECURE_CIDRS:-}
+      CONNECTME_RDP_IGNORE_CERT: ${CONNECTME_RDP_IGNORE_CERT:-true}
       CONNECTME_TRANSFER_ROOT: /var/lib/connectme/transfers
     depends_on:
       postgres: {condition: service_healthy}

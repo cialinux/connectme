@@ -46,6 +46,8 @@ spec:
             - {name: CONNECTME_SSH_KNOWN_HOSTS, value: /etc/connectme/ssh_known_hosts}
             # No deployment-level destination denylist.
             - {name: CONNECTME_REMOTE_DENY_CIDRS, value: ""}
+            # Operator-selected global RDP certificate bypass; no destination allowlist.
+            - {name: CONNECTME_RDP_IGNORE_CERT, value: "true"}
           startupProbe:
             httpGet: {path: /livez, port: http}
             periodSeconds: 3

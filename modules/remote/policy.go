@@ -38,27 +38,8 @@ func validOrigin(r *http.Request) bool {
 	return err == nil && (origin.Scheme == "http" || origin.Scheme == "https") && origin.Host == r.Host && origin.User == nil
 }
 
-// An explicit switch AND an explicit destination allowlist are required.
-func allowUntrustedCertificate(address string) bool {
-	if os.Getenv("CONNECTME_RDP_IGNORE_CERT") != "true" {
-		return false
-	}
-	ip, err := netip.ParseAddr(address)
-	if err != nil {
-		return false
-	}
-	allowed := false
-	for _, raw := range strings.Split(os.Getenv("CONNECTME_RDP_INSECURE_CIDRS"), ",") {
-		if strings.TrimSpace(raw) == "" {
-			continue
-		}
-		p, e := netip.ParsePrefix(strings.TrimSpace(raw))
-		if e != nil {
-			return false
-		}
-		if p.Contains(ip) {
-			allowed = true
-		}
-	}
-	return allowed
+// Explicit global opt-in: TLS remains encrypted but server identity is not verified.
+// The retired CONNECTME_RDP_INSECURE_CIDRS setting has no effect.
+func allowUntrustedCertificate() bool {
+	return os.Getenv("CONNECTME_RDP_IGNORE_CERT") == "true"
 }
