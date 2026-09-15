@@ -5,13 +5,10 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production-cialinux
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-body-size: "34m"
-    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/compute-full-forwarded-for: "true"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
     # Explicit replacement of the previously deployed restricted annotation.
-    nginx.ingress.kubernetes.io/whitelist-source-range: "0.0.0.0/0,::/0"
+#    nginx.ingress.kubernetes.io/whitelist-source-range: "0.0.0.0/0,::/0"
 spec:
   ingressClassName: nginx
   tls:
