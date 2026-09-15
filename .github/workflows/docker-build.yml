@@ -58,6 +58,8 @@ jobs:
           context: .
           file: Dockerfile
           target: server
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
           platforms: linux/amd64
           push: true
           tags: |

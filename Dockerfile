@@ -4,7 +4,8 @@ WORKDIR /src
 COPY go.mod go.sum* ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/connectme ./cmd/connectme-server && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/connectme-migrate ./cmd/connectme-migrate && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/connectmectl ./cmd/connectmectl
+ARG VERSION=1.0.16
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X github.com/connectme/connectme/modules/identity.ReleaseVersion=${VERSION}" -o /out/connectme ./cmd/connectme-server && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/connectme-migrate ./cmd/connectme-migrate && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/connectmectl ./cmd/connectmectl
 FROM docker.io/library/alpine:3.22.1 AS server
 # Match official guacd UID for private shared transfer directories.
 RUN addgroup -S -g 1000 connectme && adduser -S -D -H -u 1000 -G connectme connectme

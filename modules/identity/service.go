@@ -88,8 +88,12 @@ func (s *Service) EnsureDefaultAdmin(ctx context.Context) (User, bool, error) {
 }
 func (s *Service) CreateAdmin(ctx context.Context, email, name, password string) (User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
-	if email == "" || !strings.Contains(email, "@") {
-		return User{}, errors.New("email inválido")
+	if email == "" || strings.ContainsAny(email, " \t\r\n") || len(email) > 254 {
+		return User{}, errors.New("utilizador/email inválido: não use espaços")
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return User{}, errors.New("nome obrigatório")
 	}
 	hash, err := HashPassword(password)
 	if err != nil {

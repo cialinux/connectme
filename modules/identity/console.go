@@ -8,7 +8,13 @@ import (
 
 //go:embed console.html console.js workspace.js transfers.js clipboard.js
 var consoleFiles embed.FS
-var consoleTemplate = template.Must(template.ParseFS(consoleFiles, "console.html"))
+var consoleTemplate = func() *template.Template {
+	source, err := consoleFiles.ReadFile("console.html")
+	if err != nil {
+		panic(err)
+	}
+	return brandedTemplate("console", string(source))
+}()
 
 func (m *Module) consoleScript(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")

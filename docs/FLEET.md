@@ -1,5 +1,27 @@
 # Fleet: dois bundles independentes
 
+## Segredos no deploy
+
+O arquivo `.local/connectme-pro.env` é uma entrada privada de preparação, não
+uma dependência permanente da aplicação. Em execução, Kubernetes injeta o
+Secret `connectme-runtime`; ele é reutilizado nos próximos deploys.
+Não é necessário recriá-lo em cada release.
+
+É possível automatizar o provisionamento usando um gerenciador de segredos
+integrado ao cluster ou uma etapa de CI autorizada que receba os valores de
+um cofre. Isso exige configurar o provedor e suas credenciais. Não incluímos
+chaves reais em `base/`, overlays ou no workflow público, nem criamos um Job
+que gere novas chaves ao perder o Secret: isso inutilizaria dados cifrados
+de um banco restaurado. A publicação da imagem não recebe segredos de runtime.
+
+O exemplo `replace-with-a-long-random-value` não é uma senha segura de produção.
+Sua substituição em banco existente exige alterar a senha do PostgreSQL e o
+Secret de forma coordenada; mudar somente o arquivo não muda o banco.
+Chaves expostas devem ser rotacionadas com migração dos dados cifrados e backup,
+nunca simplesmente substituídas. `CONNECTME_ENV=development` também deve ser
+revisto para produção. Os valores explícitos de ambiente no Deployment, como
+HTTP e opções de destino/RDP, prevalecem sobre `envFrom` do Secret.
+
 Configuração adotada neste projeto, conforme a instalação do operador:
 
 | Ambiente | Paths no GitRepo | Namespace de destino |
