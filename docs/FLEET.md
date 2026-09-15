@@ -1,72 +1,36 @@
-# Recuperação do deploy Fleet
+# Fleet: dois bundles independentes
 
-## Diagnóstico confirmado no namespace connectme-pro
+Configuração adotada neste projeto, conforme a instalação do operador:
 
-- postgres-0: CreateContainerConfigError, Secret connectme-runtime ausente.
-- API aguardando PostgreSQL no init container; não é erro de build da imagem.
-- Release instalada: connectme-pro-base, apenas base, sem Ingress/nodeSelector.
-- Overlay pro estava sem a referência ../../base e não podia renderizar patches.
-- O nó workload=pro tem taint dedicated=pro:NoSchedule; toleration adicionada.
-- POSTGRES_PASSWORD no .env divergia da senha da URL da aplicação; o arquivo
-  local preparado usa a senha da URL e preserva as chaves. O .env não é alterado.
-- A imagem virgiliofilhos/connectme-server:latest permite pull anônimo. Removida
-  a dependência de cred-dockerhub inexistente nesse namespace.
+| Ambiente | Paths no GitRepo | Namespace de destino |
+|---|---|---|
+| Produção | base e overlays/pro | connectme-pro |
+| Desenvolvimento | base e overlays/dev | connectme-dev |
 
-## Ações do operador (o assistente não as executou)
+Configure o namespace de destino também para o bundle base. Use GitRepos
+separados para dev/pro. Não misture os dois ambientes num mesmo namespace.
 
-1. Na raiz do projeto, crie o Secret já referenciado usando o .env do Compose.
-   Preserve especialmente MASTER_KEY, AUDIT_HMAC_KEY, GUACAMOLE_KEY e senha do
-   banco. Não publique .env no Git nem use valores de exemplo. Confirme que
-   CONNECTME_DATABASE_URL usa o serviço postgres:5432 e banco connectme.
+base contém Deployment, StatefulSet, Services e ConfigMap de confiança SSH.
+Cada overlay contém somente Namespace e Ingress do ambiente. Os overlays não
+importam a base e não contêm patches ou transformações de imagens de recursos
+pertencentes ao outro bundle. Cada objeto possui um único proprietário Fleet.
 
-```sh
-node scripts/prepare-k8s-env.mjs pro
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro create secret generic connectme-runtime --from-env-file=.local/connectme-pro.env
-```
+Não configure a mesma release Helm para os dois bundles. O releaseName fixo e
+a seleção kustomize.dir da raiz foram retirados dos exemplos de opções Fleet.
+Preserve os recursos/dados existentes ao alterar opções de gerenciamento.
 
-O arquivo .local/connectme-pro.env já foi preparado nesta correção. Não é preciso
-rodar o gerador novamente; ele recusa sobrescrita. Somente o comando kubectl fica
-para o operador. O arquivo é ignorado pelo Git e Docker, com permissão 0600.
+Imagem, recursos e agendamento dos workloads são definidos no bundle base;
+um overlay independente não consegue aplicar seus patches ao outro bundle.
+Os arquivos de scheduling antigos foram removidos por não serem utilizados.
 
-O comando só serve enquanto o Secret está ausente. Não delete um Secret existente
-para repetir o procedimento. Para importar os dados do Compose, siga o roteiro
-KUBERNETES.md ANTES de liberar a inicialização da API: criar esse Secret agora
-permite que a aplicação atual inicialize um banco vazio e o admin de bootstrap.
-Não restaure dump sobre esse banco inicializado sem planejamento.
-
-2. Envie as correções ao GitHub. Configure o GitRepo Fleet para usar somente o
-   path `.` e o fleet.yaml da raiz, que seleciona overlays/pro. Não inclua base,
-   overlays/dev e overlays/pro como bundles concorrentes da mesma instalação.
-   Base é uma biblioteca compartilhada, não um ambiente implantável.
-
-ATENÇÃO ao bundle já existente: preserve a release connectme-pro-base e os dados
-ao trocar o path. Antes de remover o bundle antigo, configure retenção de recursos
-no gerenciamento Fleet e confirme a transferência; não permita que a limpeza do
-bundle antigo desinstale a release usada pelo novo. Não execute helm uninstall,
-force/takeOwnership nem apague PVCs para contornar conflito. O keepResources deste
-novo fleet.yaml não altera retroativamente a retenção do bundle antigo.
-
-O kubeconfig staging é do cluster downstream e não expõe GitRepo/Bundle do
-gerenciamento Fleet. A configuração atual de paths/retention deve ser conferida
-no Rancher; não foi possível verificar ou alterar essa configuração daqui.
-
-Dev usa outro GitRepo com path `.` e options file `fleet-dev.yaml`. O padrão root
-fleet.yaml é produção porque os dois ambientes compartilham o mesmo cluster;
-não se infere ambiente por labels de cluster. Há apenas dois overlays.
-
-3. Após reconciliar, confira:
+Validação independente, sem deploy:
 
 ```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro get pods,pvc,ingress
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro get events --sort-by=.lastTimestamp
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro logs deployment/connectme -c server --tail=60
+kubectl kustomize base
+kubectl kustomize overlays/pro
+kubectl kustomize overlays/dev
 ```
 
-O PVC existente é preservado. O deslocamento do PostgreSQL para o worker pro
-pode aguardar detach/attach do volume. Não altere o template imutável do StatefulSet
-nem tente reduzir o PVC: o template é 5Gi e o volume provisionado observado é 10Gi.
-
-HTTPS, DNS e rota/VPN à LAN continuam necessários após os Pods ficarem saudáveis.
-Nenhum apply/patch, commit/push ou alteração da release foi executado.
-
-Referência: https://fleet.rancher.io/explanations/gitrepo-content
+Secret connectme-runtime precisa existir no namespace escolhido. O Ingress
+aceita todas as origens; TLS e login continuam obrigatórios. Não há NetworkPolicy
+nos manifests padrão. Recursos antigos retidos devem ser tratados pelo operador.

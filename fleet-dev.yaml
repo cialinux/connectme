@@ -1,8 +1,5 @@
-# Optional Fleet options file for a separate dev GitRepo using path: .
+# Optional options file; use GitRepo paths base + overlays/dev.
 defaultNamespace: connectme-dev
-kustomize:
-  dir: overlays/dev
 helm:
-  releaseName: connectme-dev
   timeoutSeconds: 300
 keepResources: true

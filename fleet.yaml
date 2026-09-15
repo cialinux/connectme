@@ -1,10 +1,6 @@
-# GitRepo path: . (not base). Production is selected explicitly.
-defaultNamespace: connectme-pro
-kustomize:
-  dir: overlays/pro
+# Shared Fleet options. GitRepo paths select base and the environment overlay.
+# Configure the destination namespace on the GitRepo, including for base.
+# Do not force the same Helm release name onto two separate bundles.
 helm:
-  # Preserve the existing downstream release name. Never force ownership.
-  releaseName: connectme-pro-base
   timeoutSeconds: 300
-# Protect resources if this bundle is removed; deletion is an operator decision.
 keepResources: true
