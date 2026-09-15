@@ -4,7 +4,7 @@ namespace: connectme-pro
 resources:
   - namespace.yaml
   # Required: scheduling patches target resources declared by this base.
-  #  - ../../base
+  - ../../base
   - ingress.yaml
 patches:
   - path: scheduling.yaml

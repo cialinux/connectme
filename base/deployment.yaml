@@ -44,8 +44,8 @@ spec:
             - {name: CONNECTME_COOKIE_SECURE, value: "true"}
             - {name: CONNECTME_TRANSFER_ROOT, value: /var/lib/connectme/transfers}
             - {name: CONNECTME_SSH_KNOWN_HOSTS, value: /etc/connectme/ssh_known_hosts}
-            # Keep cluster internals denied even when reusing the Compose .env.
-            - {name: CONNECTME_REMOTE_DENY_CIDRS, value: "10.244.0.0/16,10.43.0.0/16,169.254.0.0/16"}
+            # No deployment-level destination denylist.
+            - {name: CONNECTME_REMOTE_DENY_CIDRS, value: ""}
           startupProbe:
             httpGet: {path: /livez, port: http}
             periodSeconds: 3

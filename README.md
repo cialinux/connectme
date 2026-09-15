@@ -1,5 +1,9 @@
 # ConnectMe
 
+Kubernetes: `base/` e `overlays/` na raiz. Instalação Docker: [docker/README.md](docker/README.md).
+Correção do 403: não comente a anotação de origem; o manifesto usa explicitamente
+`0.0.0.0/0,::/0` para substituir a restrição antiga ainda instalada.
+
 Código, build e manifests na raiz: `base/` e `overlays/{dev,pro}`.
 [Diagnóstico e configuração Fleet](docs/FLEET.md).
 [Build incremental e publicação latest pelo GitHub Actions](docs/IMAGE_CI.md).
