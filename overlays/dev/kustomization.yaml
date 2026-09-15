@@ -3,5 +3,4 @@ kind: Kustomization
 namespace: connectme-dev
 # Independent Fleet bundle. Workloads are owned by the separate base bundle.
 resources:
-  - namespace.yaml
   - ingress.yaml

@@ -11,7 +11,11 @@ Configure o namespace de destino também para o bundle base. Use GitRepos
 separados para dev/pro. Não misture os dois ambientes num mesmo namespace.
 
 base contém Deployment, StatefulSet, Services e ConfigMap de confiança SSH.
-Cada overlay contém somente Namespace e Ingress do ambiente. Os overlays não
+Cada overlay renderiza somente o Ingress do ambiente. O namespace deve existir
+antes da instalação (criado pelo Rancher ou pelo operador); `namespace.yaml`
+fica disponível apenas para preparação manual, fora do kustomization. Assim,
+o overlay não tenta assumir a propriedade Helm de um namespace do Rancher.
+Os overlays não
 importam a base e não contêm patches ou transformações de imagens de recursos
 pertencentes ao outro bundle. Cada objeto possui um único proprietário Fleet.
 
@@ -34,3 +38,50 @@ kubectl kustomize overlays/dev
 Secret connectme-runtime precisa existir no namespace escolhido. O Ingress
 aceita todas as origens; TLS e login continuam obrigatórios. Não há NetworkPolicy
 nos manifests padrão. Recursos antigos retidos devem ser tratados pelo operador.
+
+## Instalação nova: preparar antes da sincronização
+
+Uma instalação vazia não contém as credenciais do banco nem as chaves da aplicação.
+Elas não são publicadas no Git nem geradas novamente sobre um banco existente.
+Na raiz do projeto, prepare o arquivo a partir do `.env` privado:
+
+```sh
+node scripts/prepare-k8s-env.mjs pro
+```
+
+Se já existir, não o sobrescreva: valide o arquivo preparado:
+
+```sh
+node scripts/prepare-k8s-env.mjs pro --check
+```
+
+Com `connectme-pro` já criado, o operador executa **uma vez**:
+
+```sh
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro create secret generic connectme-runtime --from-env-file=.local/connectme-pro.env
+```
+
+Esse comando não sobrescreve um Secret existente. Não use o `.env` bruto:
+a preparação alinha POSTGRES_PASSWORD com a senha da URL da aplicação.
+Em restaurações, use as chaves e senha originais do banco; alterar o Secret
+não altera a senha armazenada num PostgreSQL já inicializado.
+Guarde backup seguro do Secret junto com o backup do banco.
+
+Depois sincronize **ambos** os paths `base` e `overlays/pro` no Fleet,
+com namespace `connectme-pro` e releases distintas. Não adicione `../../base`.
+Só o bundle base não publica o site: o Ingress pertence ao overlay.
+
+## Verificação após sincronizar
+
+```sh
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro rollout status statefulset/postgres --timeout=180s
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro rollout status deployment/connectme --timeout=300s
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro get pods,pvc,svc,ingress,certificate
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro get events --sort-by=.lastTimestamp
+```
+
+`CreateContainerConfigError` com `secret not found` bloqueia o banco e,
+consequentemente, o init container `wait-postgres`. Não exige rebuild de imagem.
+Se não houver Ingress, examine o bundle **overlay** no Rancher/Fleet. A ausência
+do recurso não comprova a causa do erro do Fleet: consulte o status desse bundle
+no cluster de gerenciamento, pois o kubeconfig downstream não expõe seus GitRepos.

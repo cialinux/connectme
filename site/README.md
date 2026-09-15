@@ -6,8 +6,9 @@ Código da aplicação, Dockerfile, Compose e CI da imagem ficam na raiz do repo
 Execute os comandos a partir da raiz:
 
 ```sh
-kubectl kustomize site/overlays/dev
-kubectl kustomize site/overlays/pro
+kubectl kustomize base
+kubectl kustomize overlays/dev
+kubectl kustomize overlays/pro
 ```
 
 Consulte [deploy, segredos e migração](../docs/KUBERNETES.md).
