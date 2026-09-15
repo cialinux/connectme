@@ -10,8 +10,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "34m"
     nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
-    # Client public egress IP. 128.140.29.148 is the ingress destination.
-    nginx.ingress.kubernetes.io/whitelist-source-range: "94.62.108.14/32"
+    # Public HTTPS access; authentication and RBAC remain mandatory.
 spec:
   ingressClassName: nginx
   tls:

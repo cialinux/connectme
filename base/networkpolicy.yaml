@@ -14,25 +14,9 @@ spec:
         - podSelector:
             matchLabels: {app: connectme}
       ports: [{protocol: TCP, port: 8080}]
+  # Authorized unrestricted outbound traffic; internal ingress remains isolated.
   egress:
-    - to:
-        - namespaceSelector:
-            matchLabels: {kubernetes.io/metadata.name: kube-system}
-      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
-    - to:
-        - podSelector:
-            matchLabels: {app: connectme-postgres}
-      ports: [{protocol: TCP, port: 5432}]
-    - to:
-        - podSelector:
-            matchLabels: {app: connectme}
-      ports: [{protocol: TCP, port: 8080}]
-    - to:
-        - ipBlock: {cidr: 192.168.1.0/24}
-      ports: [{protocol: TCP, port: 22}, {protocol: TCP, port: 3389}, {protocol: TCP, port: 33891}]
-    - to:
-        - ipBlock: {cidr: 94.62.108.14/32}
-      ports: [{protocol: TCP, port: 33891}, {protocol: TCP, port: 3389}]
+    - {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
