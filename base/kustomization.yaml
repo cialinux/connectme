@@ -4,7 +4,3 @@ resources:
   - deployment.yaml
   - postgres.yaml
   - service.yaml
-configMapGenerator:
-  - name: connectme-ssh-trust
-    files:
-      - ssh_known_hosts

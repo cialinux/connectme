@@ -14,9 +14,9 @@ await request('/api/v1/auth/password','POST',{current_password:'admin',new_passw
 await request('/api/v1/auth/login','POST',{email:'admin',password:'Isolated-test-only-2026!'})}
 assert.match(await request('/app/assets/console.js'),/Salvar alterações/);
 const loc=await request('/api/v1/locations','POST',{name:'remote-smoke-'+Date.now(),region:'test',description:''},201);
-const net=await request(`/api/v1/locations/${loc.id}/networks`,'POST',{name:'test-net',cidr:'192.168.1.0/24'},201);
-const host=await request('/api/v1/hosts','POST',{name:'test-host',location_id:loc.id,address:'192.168.1.246',operating_system:'windows'},201);
-host.address='192.168.1.200';await request('/api/v1/hosts/'+host.id,'PUT',host);
+const net=await request(`/api/v1/locations/${loc.id}/networks`,'POST',{name:'test-net',cidr:'192.0.2.0/24'},201);
+const host=await request('/api/v1/hosts','POST',{name:'test-host',location_id:loc.id,address:'192.0.2.246',operating_system:'windows'},201);
+host.address='192.0.2.200';await request('/api/v1/hosts/'+host.id,'PUT',host);
 const cred=await request('/api/v1/credentials','POST',{name:'test-credential',type:'password',username:'test-user',domain:'',value:'Dummy-secret-only'},201);
 const conn=await request('/api/v1/connections','POST',{name:'test-rdp',host_id:host.id,credential_ref_id:cred.id,protocol:'rdp',port:3389},201);
 const launch=await request('/api/v1/connections/'+conn.id+'/open','POST',{});

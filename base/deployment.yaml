@@ -43,7 +43,6 @@ spec:
             - {name: CONNECTME_HTTP_ADDRESS, value: ":8081"}
             - {name: CONNECTME_COOKIE_SECURE, value: "true"}
             - {name: CONNECTME_TRANSFER_ROOT, value: /var/lib/connectme/transfers}
-            - {name: CONNECTME_SSH_KNOWN_HOSTS, value: /etc/connectme/ssh_known_hosts}
             # No deployment-level destination denylist.
             - {name: CONNECTME_REMOTE_DENY_CIDRS, value: ""}
             # Operator-selected global RDP certificate bypass; no destination allowlist.
@@ -73,7 +72,6 @@ spec:
           volumeMounts:
             - {name: transfers, mountPath: /var/lib/connectme/transfers}
             - {name: server-tmp, mountPath: /tmp}
-            - {name: ssh-trust, mountPath: /etc/connectme, readOnly: true}
         - name: guacamole
           image: guacamole/guacamole:1.6.0
           ports: [{name: gateway, containerPort: 8080}]
@@ -132,5 +130,3 @@ spec:
           emptyDir: {medium: Memory, sizeLimit: 512Mi}
         - name: server-tmp
           emptyDir: {sizeLimit: 64Mi}
-        - name: ssh-trust
-          configMap: {name: connectme-ssh-trust}

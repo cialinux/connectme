@@ -1,12 +1,12 @@
 # Instalação Docker
 
 Este diretório usa a imagem pública existente, sem build local. Kubernetes
-permanece em base/ e overlays/ na raiz; Dockerfile e workflow não foram alterados.
+permanece em base/ e overlays/ na raiz. Use a imagem atualizada com a migration SSH.
 
 ```sh
 cd docker
-cp .env.example .env
-# Configure senhas/chaves fortes; a senha da URL deve coincidir com POSTGRES_PASSWORD.
+node ../scripts/init-env.mjs .env
+# Gera chaves e senha consistentes; recusa sobrescrever arquivo existente.
 docker compose --env-file .env up -d --pull always --wait
 ```
 

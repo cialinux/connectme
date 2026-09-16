@@ -1,29 +1,12 @@
-# Acesso de rede — 2026-09-15
+# Acesso de rede
 
-Por solicitação do operador, a NetworkPolicy de sessão permite toda saída
-(`egress: [{}]`), sem lista de IPs/portas. Os Ingress dev/pro não têm allowlist
-de origem: o painel HTTPS pode ser acessado de qualquer rede, com login/RBAC.
-Guacd e PostgreSQL continuam sem exposição pública e com entrada isolada.
+O padrão não inclui NetworkPolicy Kubernetes nem restrições de IP no Ingress.
+O Deployment e o Compose deixam `CONNECTME_REMOTE_DENY_CIDRS` vazio.
+A aplicação continua exigindo login, autorização e cadastro válido da rede/host.
+Para permitir qualquer IPv4/IPv6 numa localização, o administrador pode cadastrar
+as redes correspondentes no painel; não há IP de laboratório fixado no código.
 
-A aplicação mantém bloqueio de destinos internos do cluster e link-local:
-10.244.0.0/16, 10.43.0.0/16, 169.254.0.0/16. O bloqueio especial do host de
-laboratório 192.168.1.248 foi removido. Cadastro/autorização das redes e hosts,
-validação de destinos, chaves SSH e certificados RDP não foram desativados.
-
-Diagnóstico de 94.62.108.14:33891: a política antiga já permitia essa combinação.
-O teste TCP no guacd retornou Host is unreachable; tentativas anteriores também
-registraram Server refused connection (wrong security type?). Liberar egress
-não comprova NAT, firewall ou negociação RDP corretos. A exceção de certificado
-atualmente ativa cobre apenas 192.168.1.200/32, não o IP público. Não foi ampliada
-sem validar o certificado/destino. NLA continua obrigatório.
-
-Após o operador publicar/reconciliar, testar:
-
-```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro exec deployment/connectme -c guacd -- nc -z -v -w 5 94.62.108.14 33891
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro logs deployment/connectme -c guacd --since=5m
-```
-
-Se TCP continuar inacessível, conferir NAT TCP 33891 para o Windows/porta RDP,
-firewalls e rota de retorno. O IP de saída do worker pode diferir do IP do Ingress.
-Não foi aplicada alteração no cluster durante esta preparação.
+Acessar o site não comprova conectividade aos destinos. Verifique rota, NAT,
+firewall e porta TCP a partir do guacd. SSH registra confiança no banco;
+RDP ignora certificados globalmente quando `CONNECTME_RDP_IGNORE_CERT=true`.
+O próprio servidor também pode ser cadastrado, sem exceção específica por IP.

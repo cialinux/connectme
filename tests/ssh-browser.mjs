@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'/tmp/connectme-browser-tools/node_modules/playwright/index.mjs');
 const address=process.env.SSH_FIXTURE_IP;
-if(!address)throw Error('Set SSH_FIXTURE_IP and provision its trusted public key in the isolated config/ssh_known_hosts');
+if(!address)throw Error('Set SSH_FIXTURE_IP; first-use trust is registered in the database');
 const browser=await chromium.launch({headless:true});const page=await browser.newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto('http://127.0.0.1:18080/');await page.locator('[name=email]').fill('admin');await page.locator('[name=password]').fill('Isolated-test-only-2026!');await page.getByRole('button',{name:'Entrar',exact:true}).click();await page.waitForURL('**/app');

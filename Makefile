@@ -8,4 +8,4 @@ vet:
 compose-config:
 	docker compose --env-file .env config --quiet
 run:
-	docker compose --env-file .env up --build
+	docker compose --env-file .env up -d --pull always --wait

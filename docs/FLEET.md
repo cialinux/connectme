@@ -32,7 +32,7 @@ Configuração adotada neste projeto, conforme a instalação do operador:
 Configure o namespace de destino também para o bundle base. Use GitRepos
 separados para dev/pro. Não misture os dois ambientes num mesmo namespace.
 
-base contém Deployment, StatefulSet, Services e ConfigMap de confiança SSH.
+base contém Deployment, StatefulSet, Services.
 Cada overlay renderiza somente o Ingress do ambiente. O namespace deve existir
 antes da instalação (criado pelo Rancher ou pelo operador); `namespace.yaml`
 fica disponível apenas para preparação manual, fora do kustomization. Assim,
@@ -65,6 +65,8 @@ nos manifests padrão. Recursos antigos retidos devem ser tratados pelo operador
 
 Uma instalação vazia não contém as credenciais do banco nem as chaves da aplicação.
 Elas não são publicadas no Git nem geradas novamente sobre um banco existente.
+Em instalação realmente nova, gere primeiro o `.env` com
+`node scripts/init-env.mjs` (não sobrescreve arquivos existentes).
 Na raiz do projeto, prepare o arquivo a partir do `.env` privado:
 
 ```sh

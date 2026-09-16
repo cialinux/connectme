@@ -8,10 +8,8 @@ import (
 	"strings"
 )
 
-// Read-only session probes do not carry Origin in normal browsers.
-// The self-host SSH exception overrides only a matching deny entry; it does
-// not bypass host CIDR validation, IP pinning, enabled flags or authorization.
-func destinationAllowed(ip netip.Addr, protocol string, port int) bool {
+// Optional operator-defined denylist; empty allows every address.
+func destinationAllowed(ip netip.Addr, _ string, _ int) bool {
 	blocked := false
 	for _, raw := range strings.Split(os.Getenv("CONNECTME_REMOTE_DENY_CIDRS"), ",") {
 		if strings.TrimSpace(raw) == "" {
@@ -23,11 +21,7 @@ func destinationAllowed(ip netip.Addr, protocol string, port int) bool {
 		}
 		blocked = blocked || prefix.Contains(ip)
 	}
-	if !blocked {
-		return true
-	}
-	target, err := netip.ParseAddrPort(os.Getenv("CONNECTME_SELF_SSH_TARGET"))
-	return err == nil && protocol == "ssh" && port > 0 && port <= 65535 && int(target.Port()) == port && target.Addr() == ip
+	return !blocked
 }
 
 func validOrigin(r *http.Request) bool {

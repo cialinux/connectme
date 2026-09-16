@@ -6,38 +6,22 @@ import (
 	"testing"
 )
 
-func TestSelfSSHException(t *testing.T) {
-	t.Setenv("CONNECTME_REMOTE_DENY_CIDRS", "192.168.1.248/32,192.168.1.249/32")
-	t.Setenv("CONNECTME_SELF_SSH_TARGET", "192.168.1.248:22")
-	for _, v := range []struct {
-		address, protocol string
-		port              int
-		want              bool
-	}{
-		{"192.168.1.248", "ssh", 22, true},
-		{"192.168.1.248", "ssh", 8080, false},
-		{"192.168.1.248", "rdp", 22, false},
-		{"192.168.1.248", "rdp", 3389, false},
-		{"192.168.1.249", "ssh", 22, false},
-		{"192.168.1.200", "rdp", 3389, true},
-	} {
-		if destinationAllowed(netip.MustParseAddr(v.address), v.protocol, v.port) != v.want {
-			t.Errorf("unexpected policy: %+v", v)
+func TestDestinationPolicy(t *testing.T) {
+	for _, address := range []string{"192.0.2.10", "198.51.100.20", "2001:db8::1", "127.0.0.1"} {
+		t.Setenv("CONNECTME_REMOTE_DENY_CIDRS", "")
+		if !destinationAllowed(netip.MustParseAddr(address), "ssh", 22) {
+			t.Fatal("default must allow every address")
 		}
 	}
-	for _, target := range []string{"", "192.168.1.248/32", "hostname:22", "192.168.1.248:0"} {
-		t.Setenv("CONNECTME_SELF_SSH_TARGET", target)
-		if destinationAllowed(netip.MustParseAddr("192.168.1.248"), "ssh", 22) {
-			t.Fatal("invalid exception accepted")
-		}
+	t.Setenv("CONNECTME_REMOTE_DENY_CIDRS", "192.0.2.0/24")
+	if destinationAllowed(netip.MustParseAddr("192.0.2.10"), "ssh", 22) {
+		t.Fatal("explicit operator deny ignored")
 	}
-	t.Setenv("CONNECTME_SELF_SSH_TARGET", "192.168.1.248:22")
 	t.Setenv("CONNECTME_REMOTE_DENY_CIDRS", "invalid")
-	if destinationAllowed(netip.MustParseAddr("192.168.1.248"), "ssh", 22) {
-		t.Fatal("invalid deny list bypassed")
+	if destinationAllowed(netip.MustParseAddr("192.0.2.10"), "ssh", 22) {
+		t.Fatal("malformed policy accepted")
 	}
 }
-
 func TestOriginPolicy(t *testing.T) {
 	for _, v := range []struct {
 		method, origin, upgrade string
@@ -56,7 +40,7 @@ func TestOriginPolicy(t *testing.T) {
 	}
 }
 func TestCertificateExceptionIsGlobalOptIn(t *testing.T) {
-	for _, legacy := range []string{"", "192.168.1.200/32", "invalid"} {
+	for _, legacy := range []string{"", "192.0.2.20/32", "invalid"} {
 		t.Setenv("CONNECTME_RDP_INSECURE_CIDRS", legacy)
 		for _, setting := range []string{"true", "false", "", "invalid"} {
 			t.Setenv("CONNECTME_RDP_IGNORE_CERT", setting)

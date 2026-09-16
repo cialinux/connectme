@@ -16,14 +16,14 @@ const api=async(path,method='GET',body)=>page.evaluate(async({path,method,body})
 let loc,host,cred,conn,conn2,n1,n2;
 try {
  loc=await api('locations','POST',{name:'browser-'+Date.now()});
- n1=await api('locations/'+loc.id+'/networks','POST',{name:'lan',cidr:'192.168.1.0/24'});
- n2=await api('locations/'+loc.id+'/networks','POST',{name:'documentation-only',cidr:'192.0.2.0/24'});
- host=await api('hosts','POST',{name:'browser-host',location_id:loc.id,address:'192.168.1.246',operating_system:'windows'});
+ n1=await api('locations/'+loc.id+'/networks','POST',{name:'lan',cidr:'192.0.2.0/24'});
+ n2=await api('locations/'+loc.id+'/networks','POST',{name:'documentation-only',cidr:'198.51.100.0/24'});
+ host=await api('hosts','POST',{name:'browser-host',location_id:loc.id,address:'192.0.2.246',operating_system:'windows'});
  await page.getByRole('button',{name:'Hosts',exact:true}).click();
  const row=page.locator('tr').filter({hasText:'browser-host'});await row.getByRole('button',{name:'Editar',exact:true}).click();
- await page.locator('[name=address]').fill('192.168.1.200');await page.getByRole('button',{name:'Salvar alterações',exact:true}).click();
- await page.waitForFunction(()=>document.querySelector('#rows')?.textContent.includes('192.168.1.200'));
- assert.equal((await api('hosts')).items.find(x=>x.id===host.id).address,'192.168.1.200');
+ await page.locator('[name=address]').fill('192.0.2.200');await page.getByRole('button',{name:'Salvar alterações',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('#rows')?.textContent.includes('192.0.2.200'));
+ assert.equal((await api('hosts')).items.find(x=>x.id===host.id).address,'192.0.2.200');
  // Never attempt dummy credentials against the user's Windows machine.
  await api('hosts/'+host.id,'PUT',{...host,address:'192.0.2.200'});
  cred=await api('credentials','POST',{name:'browser-credential',type:'password',username:'dummy-user',value:'Dummy-browser-test'});

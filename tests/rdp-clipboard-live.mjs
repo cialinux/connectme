@@ -1,6 +1,9 @@
 // Explicit lab-only test: opens its own blank Notepad and a unique redirected file.
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {isIP} from 'node:net';
+const address=process.env.RDP_TEST_IP,username=process.env.RDP_TEST_USER,port=Number(process.env.RDP_TEST_PORT||3389);
+if(!isIP(address||'')||!username||!Number.isInteger(port)||port<1||port>65535)throw Error('Set RDP_TEST_IP, RDP_TEST_USER and optionally RDP_TEST_PORT');
 if(process.env.CONNECTME_LIVE_RDP_TEST!=='yes')throw Error('Explicit CONNECTME_LIVE_RDP_TEST=yes required');
 let password='';for await(const chunk of process.stdin)password+=chunk;password=password.trimEnd();if(!password)throw Error('Supply lab Windows password via stdin');
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'/tmp/connectme-browser-tools/node_modules/playwright/index.mjs');
@@ -10,10 +13,10 @@ const api=(path,method='GET',body)=>page.evaluate(async({path,method,body})=>{co
 const marker='ConnectMe-'+randomUUID(),filename=marker+'.txt';let loc,net,host,cred,conn;
 const chord=keys=>page.evaluate(({id,keys})=>{const c=desktops.get(id).client;for(const k of keys)c.sendKeyEvent(1,k);for(const k of keys.toReversed())c.sendKeyEvent(0,k)},{id:conn.id,keys});
 try{
- loc=await api('locations','POST',{name:marker});net=await api('locations/'+loc.id+'/networks','POST',{name:'lab',cidr:'192.168.1.200/32'});
- host=await api('hosts','POST',{name:marker,location_id:loc.id,address:'192.168.1.200',operating_system:'windows'});
- cred=await api('credentials','POST',{name:marker,type:'password',username:'admin',value:password});password='';
- conn=await api('connections','POST',{name:marker,host_id:host.id,credential_ref_id:cred.id,protocol:'rdp',port:3389,clipboard_enabled:true,clipboard_copy_enabled:true,clipboard_paste_enabled:true,file_transfer_enabled:true,file_upload_enabled:true,file_download_enabled:true});
+ loc=await api('locations','POST',{name:marker});net=await api('locations/'+loc.id+'/networks','POST',{name:'lab',cidr:address+(isIP(address)===6?'/128':'/32')});
+ host=await api('hosts','POST',{name:marker,location_id:loc.id,address,operating_system:'windows'});
+ cred=await api('credentials','POST',{name:marker,type:'password',username,value:password});password='';
+ conn=await api('connections','POST',{name:marker,host_id:host.id,credential_ref_id:cred.id,protocol:'rdp',port,clipboard_enabled:true,clipboard_copy_enabled:true,clipboard_paste_enabled:true,file_transfer_enabled:true,file_upload_enabled:true,file_download_enabled:true});
  await page.evaluate(c=>openDesktop(c),conn);await page.waitForFunction(id=>{const d=desktops.get(id);return d?.connected&&d.client.getDisplay().getWidth()>0},conn.id);
  // Guacamole CONNECTED precedes the completed Windows desktop/logon sequence.
  await page.waitForTimeout(3000);

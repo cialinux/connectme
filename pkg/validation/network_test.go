@@ -8,15 +8,15 @@ import (
 )
 
 func TestDestinationCIDR(t *testing.T) {
-	allowed := []netip.Prefix{netip.MustParsePrefix("192.168.1.0/24")}
-	ip, err := Destination(context.Background(), net.DefaultResolver, "192.168.1.20", allowed)
-	if err != nil || ip.String() != "192.168.1.20" {
+	allowed := []netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")}
+	ip, err := Destination(context.Background(), net.DefaultResolver, "192.0.2.20", allowed)
+	if err != nil || ip.String() != "192.0.2.20" {
 		t.Fatalf("ip=%v err=%v", ip, err)
 	}
 	if _, err = Destination(context.Background(), net.DefaultResolver, "127.0.0.1", allowed); err == nil {
 		t.Fatal("loopback permitido")
 	}
-	if _, err = Destination(context.Background(), net.DefaultResolver, "192.168.2.20", allowed); err == nil {
+	if _, err = Destination(context.Background(), net.DefaultResolver, "198.51.100.20", allowed); err == nil {
 		t.Fatal("IP fora do CIDR permitido")
 	}
 }

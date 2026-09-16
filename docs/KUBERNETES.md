@@ -4,7 +4,7 @@ Siga [FLEET.md](FLEET.md) para instalação, Secret e recuperação.
 
 ## Organização e dependências
 
-- `base/`: Deployment, StatefulSet PostgreSQL, Services e ConfigMap SSH.
+- `base/`: Deployment, StatefulSet PostgreSQL, Services.
 - `overlays/dev/`: Ingress de `connectme.dev.cialinux.com`.
 - `overlays/pro/`: Ingress de `connectme.cialinux.com`.
 - `docker/`: instalação alternativa por Docker Compose.
@@ -65,8 +65,7 @@ pelo Git. FLEET.md contém o comando do operador para criar o Secret.
 2. Ingress instalado pelo overlay, certificado Ready e HTTPS acessível externamente.
 3. Login, cadastros, RDP/SSH, reconexão e transferências testados.
 
-`base/ssh_known_hosts` mantém a confiança SSH da versão atual; mudanças alteram
-o ConfigMap e recriam o Pod. Isso não equivale a confiança automática pelo banco.
+A identidade SSH agora é registrada no banco; consulte [SSH_TRUST.md](SSH_TRUST.md).
 Clipboard de texto e transferência pela unidade ConnectMe não equivalem a
 copiar arquivos bidirecionalmente pelo clipboard do Explorer.
 

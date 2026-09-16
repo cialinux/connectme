@@ -16,6 +16,14 @@ async function endDesktop(entry){releaseKeys();entry.closed=true;entry.closeTran
 async function openDesktop(connection){
  if(typeof Guacamole==='undefined')throw Error('Cliente remoto indisponível. Atualize o painel e verifique o gateway.');
  const existing=desktops.get(connection.id);if(existing){if(!existing.disconnected){showDesktop(existing);return}await endDesktop(existing)}
+ if(connection.protocol==='ssh'){
+  let trust=await api('connections/'+connection.id+'/ssh-identity','POST',{});
+  if(trust.changed){
+   if(!confirm('A chave SSH mudou. Confirme a impressão digital por um canal confiável.\nAnterior: '+trust.previous+'\nAtual: '+trust.fingerprint+'\nAprovar a nova identidade?'))return;
+   trust=await api('connections/'+connection.id+'/ssh-identity','POST',{approve:trust.fingerprint,previous:trust.previous});
+   if(trust.changed)throw Error('A identidade SSH mudou novamente. Tente de novo.');
+  }
+ }
  const data=await api('connections/'+connection.id+'/open','POST',{});
  const pane=document.createElement('div');pane.className='desktop-window';pane.setAttribute('aria-label','Desktop '+connection.name);
  const toolbar=document.createElement('div');toolbar.className='desktop-toolbar';const title=document.createElement('strong');title.textContent=connection.name;toolbar.append(title);

@@ -7,6 +7,14 @@ coverage.out
 *.dump
 *.backup
 .env.*
+**/.env
+**/.env.*
+**/*.env
+**/*.key
+**/*.pem
+**/ssh_known_hosts
+**/node_modules
+**/test-results
 **/secrets.env
 **/secret.local.yaml
 site

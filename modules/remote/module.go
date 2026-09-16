@@ -91,6 +91,7 @@ func (*Module) Descriptor() modules.Descriptor {
 	return modules.Descriptor{Name: "remote-desktop", Version: "0.1.0", Dependencies: []string{"connections", "identity", "hosts", "credentials"}}
 }
 func (m *Module) Register(r modules.Registrar) error {
+	r.Handle("POST", "/api/v1/connections/{id}/ssh-identity", m.gate.Protect("connections.manage", http.HandlerFunc(m.sshIdentity)))
 	m.transferRoutes(r)
 	r.Handle("POST", "/api/v1/connections/{id}/open", m.gate.Protect("connections.manage", http.HandlerFunc(m.launch)))
 	r.Handle("GET", "/remote/{id}/websocket", http.HandlerFunc(m.serve))
@@ -144,6 +145,9 @@ func (*Module) Health(ctx context.Context) modules.HealthStatus {
 	return state
 }
 func (m *Module) validate(ctx context.Context, id string) (connections.Connection, hosts.Host, credentials.Metadata, [32]byte, error) {
+	return m.validateWithTrust(ctx, id, true)
+}
+func (m *Module) validateWithTrust(ctx context.Context, id string, checkTrust bool) (connections.Connection, hosts.Host, credentials.Metadata, [32]byte, error) {
 	var fingerprint [32]byte
 	c, err := m.connections.Get(ctx, id)
 	if err != nil || !c.Enabled {
@@ -168,8 +172,8 @@ func (m *Module) validate(ctx context.Context, id string) (connections.Connectio
 		return c, h, meta, fingerprint, errors.New("credencial indisponível")
 	}
 	var hostKey string
-	if c.Protocol == "ssh" {
-		hostKey, err = sshHostKey(h.PinnedIP, c.Port)
+	if c.Protocol == "ssh" && checkTrust {
+		hostKey, err = m.storedSSHHostKey(ctx, c.ID, h.PinnedIP, c.Port)
 		if err != nil {
 			return c, h, meta, fingerprint, err
 		}
@@ -227,7 +231,7 @@ func (m *Module) launch(w http.ResponseWriter, r *http.Request) {
 	if c.Protocol == "rdp" {
 		parameters["ignore-cert"] = strconv.FormatBool(allowUntrustedCertificate())
 	} else {
-		hostKey, keyErr := sshHostKey(h.PinnedIP, c.Port)
+		hostKey, keyErr := m.storedSSHHostKey(r.Context(), c.ID, h.PinnedIP, c.Port)
 		if keyErr != nil {
 			webapi.Problem(w, 400, "ssh_host_key", keyErr.Error())
 			return

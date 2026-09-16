@@ -30,8 +30,6 @@ services:
       CONNECTME_SESSION_IDLE_TTL: ${CONNECTME_SESSION_IDLE_TTL:-30m}
       CONNECTME_GUACAMOLE_KEY: ${CONNECTME_GUACAMOLE_KEY:?configure CONNECTME_GUACAMOLE_KEY}
       CONNECTME_REMOTE_DENY_CIDRS: ""
-      CONNECTME_SELF_SSH_TARGET: ${CONNECTME_SELF_SSH_TARGET:-}
-      CONNECTME_SSH_KNOWN_HOSTS: /etc/connectme/ssh_known_hosts
       CONNECTME_RDP_IGNORE_CERT: ${CONNECTME_RDP_IGNORE_CERT:-true}
       CONNECTME_TRANSFER_ROOT: /var/lib/connectme/transfers
     depends_on:
@@ -47,7 +45,6 @@ services:
     read_only: true
     volumes:
       - transfer-data-v2:/var/lib/connectme/transfers
-      - ../config/ssh_known_hosts:/etc/connectme/ssh_known_hosts:ro
     tmpfs: [/tmp]
     security_opt: [no-new-privileges:true]
   guacamole:

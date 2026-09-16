@@ -4,6 +4,7 @@ package main
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"io"
@@ -20,6 +21,16 @@ func main() {
 		return nil, fmt.Errorf("denied")
 	}}
 	cfg.AddHostKey(signer)
+	// Multiple algorithms detect discovery/gateway preference mismatches.
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic(err)
+	}
+	rsaSigner, err := ssh.NewSignerFromKey(rsaKey)
+	if err != nil {
+		panic(err)
+	}
+	cfg.AddHostKey(rsaSigner)
 	fmt.Print(string(ssh.MarshalAuthorizedKey(signer.PublicKey())))
 	listener, err := net.Listen("tcp", ":2222")
 	if err != nil {
