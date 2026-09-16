@@ -7,7 +7,15 @@ const check=process.argv[3]==='--check';
 if(process.argv.length>4||(process.argv[3]&&!check))throw Error('Uso: node scripts/prepare-k8s-env.mjs dev|pro [--check]');
 const values=new Map();
 const input=check?resolve('.local','connectme-'+environment+'.env'):'.env';
-for(const raw of readFileSync(input,'utf8').split(/\r?\n/)){
+let source;
+try{source=readFileSync(input,'utf8')}catch(error){
+ if(error.code!=='ENOENT')throw error;
+ console.error(check
+  ? 'Arquivo preparado ausente. Execute primeiro: node scripts/prepare-k8s-env.mjs '+environment
+  : 'Falta .env na pasta atual. Na raiz do projeto, para instalação NOVA e banco vazio, execute: node scripts/init-env.mjs\nDepois: node scripts/prepare-k8s-env.mjs '+environment+'\nPara banco existente, recupere o .env original; não gere novas chaves.');
+ process.exit(1);
+}
+for(const raw of source.split(/\r?\n/)){
  const line=raw.trim();if(!line||line.startsWith('#'))continue;
  const match=/^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line);if(!match)throw Error('Formato .env não suportado; nenhum segredo exibido.');
  let value=match[2].trim();

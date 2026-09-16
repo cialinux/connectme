@@ -1,5 +1,40 @@
 # Fleet: dois bundles independentes
 
+## Instalação nova em dev — sequência completa
+
+Execute na raiz da cópia do projeto (não dentro de `docker/`). Estes comandos
+de preparação só são apropriados para banco novo; para banco existente,
+recupere a configuração e chaves originais. Não reutilize as chaves de produção
+num ambiente dev independente.
+
+```sh
+node scripts/init-env.mjs
+node scripts/prepare-k8s-env.mjs dev
+node scripts/prepare-k8s-env.mjs dev --check
+```
+
+O primeiro comando cria `.env`; o segundo lê esse arquivo e cria
+`.local/connectme-dev.env`. O gerador recusa sobrescrever configurações existentes.
+
+O operador confere o namespace e o cria somente se não existir:
+
+```sh
+kubectl --kubeconfig "$HOME/.kube/config-staging" get namespace connectme-dev
+# Somente se a consulta retornar NotFound:
+kubectl --kubeconfig "$HOME/.kube/config-staging" create namespace connectme-dev
+```
+
+Depois, em instalação nova sem Secret existente:
+
+```sh
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev create secret generic connectme-runtime --from-env-file=.local/connectme-dev.env
+```
+
+Não use `connectme-pro` para esse arquivo e não insira espaços no caminho.
+Sincronize os paths independentes `base` e `overlays/dev` no Fleet, ambos no
+namespace `connectme-dev`. O domínio dev é `connectme.dev.cialinux.com`.
+Login inicial em banco vazio: `admin/admin`, com troca de senha obrigatória.
+
 ## Segredos no deploy
 
 O arquivo `.local/connectme-pro.env` é uma entrada privada de preparação, não
