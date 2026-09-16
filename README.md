@@ -35,11 +35,25 @@ A imagem pública precisa conter esta versão antes do teste com `--pull always`
 
 ## Primeira instalação Kubernetes
 
-Siga [Fleet](docs/FLEET.md): namespace e Secret preparados antes da sincronização,
+Na raiz do projeto, para dev novo (sem banco anterior):
+
+```sh
+node scripts/prepare-k8s-env.mjs dev
+kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f .local/kubernetes/dev/bootstrap.yaml
+```
+
+Para produção, substitua `dev` por `pro` nos dois comandos. Não é necessário
+`.env` na raiz. O script cria o diretório, gera senhas/chaves e um manifesto
+privado de Namespace + Secret. Reexecuções preservam as chaves existentes.
+O apply é feito uma vez pelo operador; o script não acessa o cluster.
+Para banco existente, importe os valores originais com `--from arquivo.env`.
+
+Siga [Fleet](docs/FLEET.md): após a preparação, sincronize os
 paths `base` e `overlays/pro` (ou dev), ambos no namespace de destino.
 Não há importação `../../base`. Os manifests atuais usam domínio, issuer e
 StorageClass do cluster cialinux: outras instalações devem adaptar esses valores.
-O Secret não é versionado; pode ser provisionado por cofre/CI autorizado.
+O Secret e a configuração ficam em `.local/kubernetes/dev|pro/`, fora do Git;
+guarde backup privado. Não há PVC adicional nem armazenamento dos segredos no banco.
 
 ## Acesso e segurança
 

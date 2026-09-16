@@ -1,6 +1,10 @@
 # Kubernetes — dev/pro
 
 Siga [FLEET.md](FLEET.md) para instalação, Secret e recuperação.
+O fluxo novo é `node scripts/prepare-k8s-env.mjs dev` (ou `pro`) e um único
+apply do arquivo `.local/kubernetes/dev/bootstrap.yaml` pelo operador.
+Não requer `.env` na raiz. O manifesto contém Namespace e Secret; os workloads
+continuam nos bundles Fleet independentes. Docker permanece inalterado.
 
 ## Organização e dependências
 

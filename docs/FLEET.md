@@ -1,146 +1,104 @@
-# Fleet: dois bundles independentes
+# Kubernetes: preparação local e dois bundles Fleet
 
-## Instalação nova em dev — sequência completa
+O Docker permanece inalterado. Para Kubernetes, não é mais necessário gerar
+`.env` na raiz nem criar Namespace e Secret em comandos separados.
 
-Execute na raiz da cópia do projeto (não dentro de `docker/`). Estes comandos
-de preparação só são apropriados para banco novo; para banco existente,
-recupere a configuração e chaves originais. Não reutilize as chaves de produção
-num ambiente dev independente.
+## Dev — instalação nova
+
+Na raiz do projeto:
 
 ```sh
-node scripts/init-env.mjs
 node scripts/prepare-k8s-env.mjs dev
-node scripts/prepare-k8s-env.mjs dev --check
+kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f .local/kubernetes/dev/bootstrap.yaml
 ```
 
-O primeiro comando cria `.env`; o segundo lê esse arquivo e cria
-`.local/connectme-dev.env`. O gerador recusa sobrescrever configurações existentes.
-
-O operador confere o namespace e o cria somente se não existir:
-
-```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" get namespace connectme-dev
-# Somente se a consulta retornar NotFound:
-kubectl --kubeconfig "$HOME/.kube/config-staging" create namespace connectme-dev
-```
-
-Depois, em instalação nova sem Secret existente:
-
-```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev create secret generic connectme-runtime --from-env-file=.local/connectme-dev.env
-```
-
-Não use `connectme-pro` para esse arquivo e não insira espaços no caminho.
-Sincronize os paths independentes `base` e `overlays/dev` no Fleet, ambos no
-namespace `connectme-dev`. O domínio dev é `connectme.dev.cialinux.com`.
-Login inicial em banco vazio: `admin/admin`, com troca de senha obrigatória.
-
-## Segredos no deploy
-
-O arquivo `.local/connectme-pro.env` é uma entrada privada de preparação, não
-uma dependência permanente da aplicação. Em execução, Kubernetes injeta o
-Secret `connectme-runtime`; ele é reutilizado nos próximos deploys.
-Não é necessário recriá-lo em cada release.
-
-É possível automatizar o provisionamento usando um gerenciador de segredos
-integrado ao cluster ou uma etapa de CI autorizada que receba os valores de
-um cofre. Isso exige configurar o provedor e suas credenciais. Não incluímos
-chaves reais em `base/`, overlays ou no workflow público, nem criamos um Job
-que gere novas chaves ao perder o Secret: isso inutilizaria dados cifrados
-de um banco restaurado. A publicação da imagem não recebe segredos de runtime.
-
-O exemplo `replace-with-a-long-random-value` não é uma senha segura de produção.
-Sua substituição em banco existente exige alterar a senha do PostgreSQL e o
-Secret de forma coordenada; mudar somente o arquivo não muda o banco.
-Chaves expostas devem ser rotacionadas com migração dos dados cifrados e backup,
-nunca simplesmente substituídas. `CONNECTME_ENV=development` também deve ser
-revisto para produção. Os valores explícitos de ambiente no Deployment, como
-HTTP e opções de destino/RDP, prevalecem sobre `envFrom` do Secret.
-
-Configuração adotada neste projeto, conforme a instalação do operador:
-
-| Ambiente | Paths no GitRepo | Namespace de destino |
-|---|---|---|
-| Produção | base e overlays/pro | connectme-pro |
-| Desenvolvimento | base e overlays/dev | connectme-dev |
-
-Configure o namespace de destino também para o bundle base. Use GitRepos
-separados para dev/pro. Não misture os dois ambientes num mesmo namespace.
-
-base contém Deployment, StatefulSet, Services.
-Cada overlay renderiza somente o Ingress do ambiente. O namespace deve existir
-antes da instalação (criado pelo Rancher ou pelo operador); `namespace.yaml`
-fica disponível apenas para preparação manual, fora do kustomization. Assim,
-o overlay não tenta assumir a propriedade Helm de um namespace do Rancher.
-Os overlays não
-importam a base e não contêm patches ou transformações de imagens de recursos
-pertencentes ao outro bundle. Cada objeto possui um único proprietário Fleet.
-
-Não configure a mesma release Helm para os dois bundles. O releaseName fixo e
-a seleção kustomize.dir da raiz foram retirados dos exemplos de opções Fleet.
-Preserve os recursos/dados existentes ao alterar opções de gerenciamento.
-
-Imagem, recursos e agendamento dos workloads são definidos no bundle base;
-um overlay independente não consegue aplicar seus patches ao outro bundle.
-Os arquivos de scheduling antigos foram removidos por não serem utilizados.
-
-Validação independente, sem deploy:
-
-```sh
-kubectl kustomize base
-kubectl kustomize overlays/pro
-kubectl kustomize overlays/dev
-```
-
-Secret connectme-runtime precisa existir no namespace escolhido. O Ingress
-aceita todas as origens; TLS e login continuam obrigatórios. Não há NetworkPolicy
-nos manifests padrão. Recursos antigos retidos devem ser tratados pelo operador.
-
-## Instalação nova: preparar antes da sincronização
-
-Uma instalação vazia não contém as credenciais do banco nem as chaves da aplicação.
-Elas não são publicadas no Git nem geradas novamente sobre um banco existente.
-Em instalação realmente nova, gere primeiro o `.env` com
-`node scripts/init-env.mjs` (não sobrescreve arquivos existentes).
-Na raiz do projeto, prepare o arquivo a partir do `.env` privado:
+## Produção — instalação nova
 
 ```sh
 node scripts/prepare-k8s-env.mjs pro
+kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f .local/kubernetes/pro/bootstrap.yaml
 ```
 
-Se já existir, não o sobrescreva: valide o arquivo preparado:
+O script só prepara arquivos; **o operador executa o apply**. Esse apply único
+instala o Namespace e o Secret, não os workloads. Depois sincronize no Fleet:
+
+| Ambiente | Paths independentes | Namespace dos dois bundles |
+|---|---|---|
+| dev | `base` e `overlays/dev` | `connectme-dev` |
+| pro | `base` e `overlays/pro` | `connectme-pro` |
+
+Não importe `../../base`. A base contém Deployment, StatefulSet e Services.
+O overlay contém somente Ingress. Use releases distintas e configure o namespace
+do bundle base também. O Namespace/Secret são preparados pelo operador e não
+são reivindicados pelos bundles Fleet. Não misture Fleet com apply manual dos
+mesmos workloads.
+
+## Arquivos privados e reexecução
+
+O script cria automaticamente, por ambiente:
+
+```text
+.local/kubernetes/dev/
+  runtime.env       # senha e chaves da instalação
+  bootstrap.yaml    # Namespace + Secret connectme-runtime
+```
+
+Para pro, o diretório final é `pro/`. Pastas novas usam 0700 e arquivos 0600.
+Tudo está excluído do Git e do contexto Docker por `.local/`. O manifesto usa
+JSON, que é YAML válido, e valores base64: **base64 não é criptografia**.
+Não publique esses arquivos, não imprima seu conteúdo em logs, nem os envie
+para revisão de código. Guarde backup privado junto com o banco.
+
+Repetir a preparação reutiliza a configuração, sem trocar chaves. Divergências
+entre manifesto e env causam erro, não sobrescrita. A validação opcional é:
 
 ```sh
-node scripts/prepare-k8s-env.mjs pro --check
+node scripts/prepare-k8s-env.mjs dev --check
 ```
 
-Com `connectme-pro` já criado, o operador executa **uma vez**:
+O apply é necessário uma vez na instalação. Em atualizações, mantenha o Secret
+e apenas sincronize os workloads pelo Fleet. Se apagar somente o Secret,
+pode reaplicar o **mesmo manifesto privado** para recuperar os mesmos valores.
+Não há PVC extra, recuperação via banco ou Job gerador de chaves no cluster.
+
+## Banco existente e migração do fluxo anterior
+
+**Não gere configuração nova para um PostgreSQL já inicializado.** O script
+é local e não inspeciona seu cluster ou PVCs. Um novo clone sem os arquivos
+privados não distingue uma instalação vazia de um banco existente.
+
+Se `.local/connectme-dev.env` (ou pro) do fluxo anterior existir, o script
+importa esse arquivo automaticamente, validando e preservando os valores.
+Se estiver em outro caminho, indique-o explicitamente:
 
 ```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro create secret generic connectme-runtime --from-env-file=.local/connectme-pro.env
+node scripts/prepare-k8s-env.mjs dev --from /caminho/privado/dev-original.env
 ```
 
-Esse comando não sobrescreve um Secret existente. Não use o `.env` bruto:
-a preparação alinha POSTGRES_PASSWORD com a senha da URL da aplicação.
-Em restaurações, use as chaves e senha originais do banco; alterar o Secret
-não altera a senha armazenada num PostgreSQL já inicializado.
-Guarde backup seguro do Secret junto com o backup do banco.
+A senha POSTGRES_PASSWORD e a senha da URL devem coincidir. Uma divergência
+é recusada; o script não altera senha do banco. Chaves não podem ser substituídas
+arbitrariamente: isso pode tornar credenciais cifradas ilegíveis.
+`.env` da raiz e `docker/.env` não são lidos automaticamente, evitando misturar
+instalações. Dev e pro novos recebem segredos aleatórios independentes.
 
-Depois sincronize **ambos** os paths `base` e `overlays/pro` no Fleet,
-com namespace `connectme-pro` e releases distintas. Não adicione `../../base`.
-Só o bundle base não publica o site: o Ingress pertence ao overlay.
+Antes de aplicar em namespace existente, confirme que os valores pertencem
+àquele banco: `kubectl apply` pode atualizar um Secret existente. Se perdeu
+os arquivos privados, recupere seu backup/Secret original antes de continuar.
 
-## Verificação após sincronizar
+## Pré-requisitos e aceite
+
+Os manifests usam Ingress NGINX, cert-manager com
+`letsencrypt-production-cialinux` e `hcloud-volumes-encrypted`.
+Outros clusters precisam adaptar issuer, StorageClass e domínios.
+Não há NetworkPolicy padrão. RDP mantém a opção global de ignorar certificados;
+SSH registra identidades no banco. Docker não foi alterado por este fluxo.
 
 ```sh
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro rollout status statefulset/postgres --timeout=180s
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro rollout status deployment/connectme --timeout=300s
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro get pods,pvc,svc,ingress,certificate
-kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-pro get events --sort-by=.lastTimestamp
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev rollout status statefulset/postgres --timeout=180s
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev rollout status deployment/connectme --timeout=300s
+kubectl --kubeconfig "$HOME/.kube/config-staging" -n connectme-dev get pods,pvc,svc,ingress,certificate
 ```
 
-`CreateContainerConfigError` com `secret not found` bloqueia o banco e,
-consequentemente, o init container `wait-postgres`. Não exige rebuild de imagem.
-Se não houver Ingress, examine o bundle **overlay** no Rancher/Fleet. A ausência
-do recurso não comprova a causa do erro do Fleet: consulte o status desse bundle
-no cluster de gerenciamento, pois o kubeconfig downstream não expõe seus GitRepos.
+Para pro, substitua o namespace. Domínios: `connectme.dev.cialinux.com` e
+`connectme.cialinux.com`. Login em banco vazio: **admin/admin**, com troca
+obrigatória de senha. Novo deploy não redefine senha de um banco existente.
