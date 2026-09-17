@@ -1,88 +1,98 @@
 # ConnectMe by cialinux
 
-Central web self-hosted para organizar localizações, redes, hosts, credenciais
-e conexões SSH/RDP. Guacamole e guacd usam imagens oficiais; a imagem ConnectMe
-contém o painel e a API. VNC, agentes e acesso entre redes sem rota/VPN continuam
-pendentes. Não há alta disponibilidade nesta versão.
+A self-hosted web console for managing locations, networks, hosts, credentials,
+and SSH/RDP connections. Guacamole and guacd use official images; the ConnectMe
+image provides the dashboard and API. VNC, remote agents, and connectivity without
+an existing route or VPN are not yet available. This version does not provide
+high availability.
 
-## Organização
+## Getting started
 
-- `base/` e `overlays/dev|pro/`: Kubernetes, dois bundles Fleet independentes.
-- `docker/`: instalação Docker Compose com imagens públicas.
-- `modules/`, `core/`, `pkg/`, `cmd/`, `migrations/`: aplicação e banco.
-- `tests/`, `scripts/`, `docs/`: validação, preparação e operação.
-- Dockerfile e `.github/workflows/`: build e publicação da imagem.
+Clone the repository and choose **Docker** or **Kubernetes**:
 
-## Primeira instalação Docker
+```sh
+git clone https://github.com/cialinux/connectme.git
+cd connectme
+```
 
-Requer Docker Compose e Node.js para gerar a configuração privada:
+The setup scripts require Node.js. The following steps are for a **new installation**.
+
+### Docker
+
+With Docker and Docker Compose installed:
 
 ```sh
 cd docker
 node ../scripts/init-env.mjs .env
-docker compose --env-file .env config --quiet
 docker compose --env-file .env up -d --pull always --wait
+docker compose ps
 ```
 
-Abra `http://IP-DO-SERVIDOR:8080`. O utilizador inicial é `admin`, senha `admin`;
-a troca de senha é obrigatória. Configure HTTPS no proxy para uso externo e
-clipboard do navegador. O atalho Compose da raiz usa o `.env` da raiz.
+Open `http://YOUR-SERVER-IP:8080`. Sign in with **admin / admin** and change
+the password when prompted. Use HTTPS through a reverse proxy for external access.
 
-O gerador cria senhas aleatórias e chaves consistentes, com permissão 0600,
-sem sobrescrever arquivos existentes. Guarde backup privado junto ao banco.
-**Não execute o gerador para substituir chaves de uma instalação existente.**
-A imagem pública precisa conter esta versão antes do teste com `--pull always`.
+### Kubernetes
 
-## Primeira instalação Kubernetes
+Run these commands from the repository root. Select your cluster using your
+usual kubeconfig or context before continuing.
 
-Na raiz do projeto, para dev novo (sem banco anterior):
+Before deploying, adapt the manifests to your cluster:
+
+- Edit `overlays/dev/ingress.yaml` or `overlays/pro/ingress.yaml`: set your
+  hostname, Ingress class, and certificate issuer or existing TLS Secret.
+  If using your own certificate, create its TLS Secret in the target namespace
+  and remove the cert-manager issuer annotation.
+- If you do not need Ingress, remove or comment out `ingress.yaml` in that
+  overlay's `kustomization.yaml`. If no resources remain, use `resources: []`.
+  You will need another way to expose the application.
+- Set the appropriate `storageClassName` in `base/postgres.yaml`.
+
+For **development**:
 
 ```sh
 node scripts/prepare-k8s-env.mjs dev
-kubectl --kubeconfig "$HOME/.kube/config-staging" apply -f .local/kubernetes/dev/bootstrap.yaml
+kubectl apply -f .local/kubernetes/dev/bootstrap.yaml
 ```
 
-Para produção, substitua `dev` por `pro` nos dois comandos. Não é necessário
-`.env` na raiz. O script cria o diretório, gera senhas/chaves e um manifesto
-privado de Namespace + Secret. Reexecuções preservam as chaves existentes.
-O apply é feito uma vez pelo operador; o script não acessa o cluster.
-Para banco existente, importe os valores originais com `--from arquivo.env`.
+For **production**:
 
-Siga [Fleet](docs/FLEET.md): após a preparação, sincronize os
-paths `base` e `overlays/pro` (ou dev), ambos no namespace de destino.
-Não há importação `../../base`. Os manifests atuais usam domínio, issuer e
-StorageClass do cluster cialinux: outras instalações devem adaptar esses valores.
-O Secret e a configuração ficam em `.local/kubernetes/dev|pro/`, fora do Git;
-guarde backup privado. Não há PVC adicional nem armazenamento dos segredos no banco.
+```sh
+node scripts/prepare-k8s-env.mjs pro
+kubectl apply -f .local/kubernetes/pro/bootstrap.yaml
+```
 
-## Acesso e segurança
+The script creates the private configuration directory and manifest automatically.
+The single bootstrap apply creates the Namespace and Secret; it does not deploy
+the application.
 
-Sem NetworkPolicy padrão ou lista de IPs obrigatória. Login, autorização,
-estado habilitado dos cadastros e redes cadastradas na aplicação continuam
-válidos. A ausência de bloqueio não cria rotas ou encaminhamentos NAT.
+In Rancher Fleet, deploy `base` and the selected overlay as **two independent
+bundles**, both targeting the same namespace:
 
-RDP está configurado para ignorar certificados de qualquer destino, por opção
-do operador. TLS permanece cifrado, mas a identidade não é validada. Configure
-`CONNECTME_RDP_IGNORE_CERT=false` para exigir certificados confiáveis.
+| Environment | Fleet paths | Namespace |
+|---|---|---|
+| Development | `base`, `overlays/dev` | `connectme-dev` |
+| Production | `base`, `overlays/pro` | `connectme-pro` |
 
-SSH registra a chave no banco no primeiro acesso e solicita confirmação pelo
-painel se mudar. Não depende de `ssh_known_hosts` no repositório.
-Veja [SSH_TRUST.md](docs/SSH_TRUST.md) para limites e migração.
+Open your configured hostname. A new, empty database starts with **admin / admin**
+and requires a password change. See the [Fleet setup guide](docs/FLEET.md)
+for details.
 
-Credenciais são cifradas; perder ou trocar arbitrariamente as chaves torna dados
-inacessíveis. Não publique `.env`, backups ou Secrets. O `.gitignore` não apaga
-conteúdo já incluído no histórico Git.
+## Important notes
 
-## Operação e testes
+- Back up your private configuration and database together. Do not publish
+  `.env`, `.local/`, Secrets, or database backups. For an existing database,
+  reuse its original keys rather than generating new ones.
+- SSH identities are stored in the database on first use; changes require
+  confirmation. RDP certificate verification is disabled in the default deployment;
+  set `CONNECTME_RDP_IGNORE_CERT=false` to require trusted certificates.
+- Updates interrupt remote sessions. Do not use `docker compose down --volumes`
+  unless you intend to delete the database.
 
-Atualizações interrompem sessões; arquivos temporários não são persistentes.
-Não use `docker compose down --volumes` em ambientes com dados importantes.
+## Documentation
 
 - [Docker](docker/README.md)
-- [Kubernetes](docs/KUBERNETES.md)
-- [Operação](docs/OPERATIONS.md)
-- [Clipboard e limites](docs/CLIPBOARD.md)
-- [CI da imagem](docs/IMAGE_CI.md)
-
-Execute `go test ./...` e `go vet ./...`. Os testes de navegador usam Playwright;
-testes com serviços devem apontar somente para uma stack descartável.
+- [Kubernetes and Fleet](docs/FLEET.md)
+- [Operations](docs/OPERATIONS.md)
+- [SSH host identity](docs/SSH_TRUST.md)
+- [Clipboard and file transfers](docs/CLIPBOARD.md)
+- [Image builds and releases](docs/IMAGE_CI.md)
