@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: connectme
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging-cialinux
+    cert-manager.io/cluster-issuer: your-cluster-issuer-dev
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
@@ -15,10 +15,10 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: [connectme.dev.cialinux.com]
+    - hosts: [connectme.dev.your-domain.com]
       secretName: connectme-dev-tls
   rules:
-    - host: connectme.dev.cialinux.com
+    - host: connectme.dev.your-domain.com
       http:
         paths:
           - path: /
