@@ -5,6 +5,8 @@ and SSH/RDP connections. Guacamole and guacd use official images; the ConnectMe
 image provides the dashboard and API. VNC, remote agents, and connectivity without
 an existing route or VPN are not yet available. This version does not provide
 high availability.
+general@cialinux.com
+
 
 ## Getting started
 
@@ -76,6 +78,13 @@ bundles**, both targeting the same namespace:
 Open your configured hostname. A new, empty database starts with **admin / admin**
 and requires a password change. See the [Fleet setup guide](docs/FLEET.md)
 for details.
+
+
+### ACCESS URL - default user
+```sh
+access your webpage with admin/admin
+```
+
 
 ## Important notes
 
