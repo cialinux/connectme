@@ -3,6 +3,23 @@ name: ConnectMe Docker Image
 on:
   push:
     branches: [main]
+    # Application/build inputs only. Docs, Compose and Kubernetes changes
+    # do not publish an image; workflow_dispatch remains available on main.
+    paths:
+      - 'cmd/**'
+      - 'core/**'
+      - 'modules/**'
+      - 'pkg/**'
+      - 'migrations/**'
+      - 'tests/**'
+      - 'vendor/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'go.work'
+      - 'go.work.sum'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/docker-build.yml'
   workflow_dispatch:
 
 permissions:
