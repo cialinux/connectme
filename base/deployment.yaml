@@ -22,7 +22,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       initContainers:
         - name: wait-postgres
-          image: postgres:17.6-alpine3.22
+          image: registry.cialinux.com/dockerhub/postgres:17.6-alpine3.22
           command: [sh, -ec, 'until pg_isready -h postgres -U connectme -d connectme; do sleep 2; done']
           securityContext:
             runAsUser: 70
@@ -32,6 +32,19 @@ spec:
           resources:
             requests: {cpu: 10m, memory: 16Mi}
             limits: {cpu: 100m, memory: 64Mi}
+      tolerations:
+        - key: typenode
+          operator: Equal
+          value: worker
+          effect: NoSchedule
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
       containers:
         - name: server
           image: registry.cialinux.com/dockerhub/virgiliofilhos/connectme-server:dev
@@ -73,7 +86,7 @@ spec:
             - {name: transfers, mountPath: /var/lib/connectme/transfers}
             - {name: server-tmp, mountPath: /tmp}
         - name: guacamole
-          image: guacamole/guacamole:1.6.0
+          image: registry.cialinux.com/dockerhub/guacamole/guacamole:1.6.0
           ports: [{name: gateway, containerPort: 8080}]
           env:
             - {name: GUACD_HOSTNAME, value: "127.0.0.1"}
@@ -102,7 +115,7 @@ spec:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {cpu: "1", memory: 768Mi}
         - name: guacd
-          image: guacamole/guacd:1.6.0
+          image: registry.cialinux.com/dockerhub/guacamole/guacd:1.6.0
           ports: [{name: guacd, containerPort: 4822}]
           startupProbe:
             tcpSocket: {port: guacd}
