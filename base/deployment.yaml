@@ -34,7 +34,7 @@ spec:
             limits: {cpu: 100m, memory: 64Mi}
       containers:
         - name: server
-          image: virgiliofilhos/connectme-server:dev
+          image: registry.cialinux.com/dockerhub/virgiliofilhos/connectme-server:dev
           imagePullPolicy: Always
           ports: [{name: http, containerPort: 8081}]
           envFrom:
@@ -125,6 +125,19 @@ spec:
             limits: {cpu: "2", memory: 1Gi}
           volumeMounts:
             - {name: transfers, mountPath: /var/lib/connectme/transfers}
+      tolerations:
+        - key: typenode
+          operator: Equal
+          value: worker
+          effect: NoSchedule
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
       volumes:
         - name: transfers
           emptyDir: {medium: Memory, sizeLimit: 512Mi}
